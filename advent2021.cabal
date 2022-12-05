@@ -1,0 +1,56 @@
+cabal-version:       >=1.10
+
+name:                advent2022
+version:             0.1.0.0
+license-file:        LICENSE
+author:              Lyndon Maydwell
+maintainer:          lyndon@sordina.net
+build-type:          Simple
+extra-source-files:  README.md
+
+executable advent2022
+  main-is: Main.hs
+  other-modules:
+    Utils
+    Advent01
+
+  hs-source-dirs:      src
+
+  default-language:    Haskell2010
+
+  ghc-options:
+    "-O3"
+    "-Wall"
+    "-threaded"
+    "-with-rtsopts=-N"
+
+  default-extensions:
+    DerivingStrategies
+    TypeApplications
+    ApplicativeDo
+    BlockArguments
+    ViewPatterns
+    QuasiQuotes
+
+  build-depends:
+    base >=4.14 && <5.15,
+    containers,
+    lens-regex-pcre,
+    text,
+    lens,
+    split,
+    mtl,
+    array,
+    arithmoi,
+    parsec,
+    vector,
+    parser-combinators,
+    template-haskell,
+    raw-strings-qq,
+    doctest,
+    parallel,
+    search-algorithms,
+    unordered-containers,
+    megaparsec,
+    generic-lens,
+    data-memocombinators
