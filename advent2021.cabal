@@ -16,6 +16,7 @@ executable advent2022
     Advent02
     Advent03
     Advent04
+    Advent05
 
   hs-source-dirs:      src
 
