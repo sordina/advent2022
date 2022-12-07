@@ -45,10 +45,3 @@ move (l:' ':r:_) = [l,' ',mine]
     ('C','Z') -> 'X'
     (x,y)     -> error $ "Unknown suggestion " <> [x] <> " " <> [y]
 
--- | Testing against test_input
---
--- >>> day2 test_input
-
-test_input :: String
-test_input = "123\n456\n\n789\n1234"
-

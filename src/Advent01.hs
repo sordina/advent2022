@@ -14,6 +14,7 @@ day1b = sum . take 3 . reverse . sort . map (sum . map (read @Integer)) . splitO
 -- | Testing against test_input
 --
 -- >>> day1 test_input
+-- 2023
 
 test_input :: String
 test_input = "123\n456\n\n789\n1234"
