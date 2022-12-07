@@ -17,7 +17,6 @@ common s = toList $ fromList a `intersection` fromList b
   b = drop l s
   l = length s `div` 2
 
-
 priority c
   | c >= 'a' && c <= 'z' = 1 + ord c - ord 'a'
   | c >= 'A' && c <= 'Z' = 27 + ord c - ord 'A'

@@ -7,6 +7,7 @@ import           System.Environment (getArgs)
 import qualified Advent01
 import qualified Advent02
 import qualified Advent03
+import qualified Advent04
 
 interactShow :: Show a => (String -> a) -> IO ()
 interactShow f = interact ((++ "\n") . show . f)
@@ -19,6 +20,8 @@ days =
     , ("02b", interactShow Advent02.day2b)
     , ("03",  interactShow Advent03.day3)
     , ("03b", interactShow Advent03.day3b)
+    , ("04",  interactShow Advent04.day4)
+    , ("04b", interactShow Advent04.day4b)
     ]
 
 help :: a
