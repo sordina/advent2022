@@ -13,6 +13,7 @@ executable advent2022
   other-modules:
     Utils
     Advent01
+    Advent02
 
   hs-source-dirs:      src
 
