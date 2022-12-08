@@ -8,6 +8,7 @@ module Advent07 where
 
 import Debug.Trace
 import Data.Char
+import Data.List (sort)
 import Data.Either
 import Data.Bifunctor
 import Data.List (foldl')
@@ -31,7 +32,7 @@ newtype Trie = Nodes { unNodes :: Map.Map String (Either File Trie) } deriving (
 instance Show Trie where show t = unlines $ drawTrie "/" 2 t
 
 day7 :: String -> Int
-day7 = sum . filter (<= 100000) . map countTrie . subTries . traceShowId . buildTree . map parse . lines
+day7 = sum . filter (<= 100000) . map countTrie . subTries . {- traceShowId . -} buildTree . map parse . lines
 
 -- * Tests
 
@@ -152,7 +153,14 @@ ls = void $ string "ls"
 parse :: String -> Either Command Output
 parse = fst . head . readP_to_S line
 
+-- * Part B
 
 day7b :: String -> Int
-day7b = error "TODO"
+day7b s = head $ sort $ filter (\x -> disk - (space - x) >= required) counts
+  where
+  tree  = buildTree $ map parse $ lines s
+  counts = map countTrie (subTries tree)
+  space = countTrie tree
+  disk = 70000000
+  required = 30000000
 
