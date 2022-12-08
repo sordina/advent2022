@@ -38,6 +38,7 @@ day7 = sum . filter (<= 100000) . map countTrie . subTries . {- traceShowId . -}
 
 -- | Testing against small input for day7
 -- >>> day7 testInput
+-- 95437
 
 testInput = drop 1 [r|
 $ cd /
