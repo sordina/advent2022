@@ -38,7 +38,26 @@ day8 s = length $ filter id $ Map.elems $ Map.mapWithKey f g
     || all (<v) (u (second succ) k)
 
 -- * Part B
+--
+-- | Testing day8b
+-- >>> day8b testInput
+-- 8
 
 day8b :: String -> Int
-day8b s = error "TODOb"
+day8b s = maximum $ Map.elems $ Map.mapWithKey f g
+  where
+  g   = parseGrid' (read . return) s
+  u w = drop 1 . unfoldr (\b -> (, w b) <$> Map.lookup b g)
+  f :: (Int,Int) -> Int -> Int
+  f k v
+    = length (takeUntil (>=v) (u (first  pred) k))
+    * length (takeUntil (>=v) (u (first  succ) k))
+    * length (takeUntil (>=v) (u (second pred) k))
+    * length (takeUntil (>=v) (u (second succ) k))
+
+takeUntil :: (a -> Bool) -> [a] -> [a]
+takeUntil f (x:xs) | f x = [x]
+takeUntil f (x:xs) | otherwise = x : takeUntil f xs
+takeUntil _ _ = []
+
 
