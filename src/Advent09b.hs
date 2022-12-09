@@ -100,7 +100,6 @@ drawTails s = unlines $ map dy ry
   where
   dy y = map (dx y) rx
   dx y x = if Set.member (x,y) s then '#' else ' '
-  es = Set.elems s
-  rx = [minimum (map fst es) ..  maximum (map fst es)]
-  ry = [minimum (map snd es) ..  maximum (map snd es)]
+  rx = [Set.findMin (Set.map fst s) ..  Set.findMax (Set.map fst s)]
+  ry = [Set.findMin (Set.map snd s) ..  Set.findMax (Set.map snd s)]
 

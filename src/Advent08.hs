@@ -17,6 +17,7 @@ import Text.RawString.QQ (r)
 -- >>> day8 testInput
 -- 21
 
+testInput :: String
 testInput = drop 1 [r|
 30373
 25512
@@ -56,8 +57,8 @@ day8b s = maximum $ Map.elems $ Map.mapWithKey f g
     * length (takeUntil (>=v) (u (second succ) k))
 
 takeUntil :: (a -> Bool) -> [a] -> [a]
-takeUntil f (x:xs) | f x = [x]
-takeUntil f (x:xs) | otherwise = x : takeUntil f xs
+takeUntil f (x:xs)
+  | f x = [x]
+  | otherwise = x : takeUntil f xs
 takeUntil _ _ = []
-
 
