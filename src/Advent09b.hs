@@ -37,7 +37,7 @@ type Point = (Int,Int)
 type World = (Set.Set Point, IntMap.IntMap Point)
 
 day9b :: String -> Int
-day9b s = Set.size $ {- traceWithId drawTails $ -} (\(x,_) -> x) $ execState (instructions s) (Set.empty, knots)
+day9b s = Set.size $ {- traceWithId drawTails $ -} fst $ execState (instructions s) (Set.empty, knots)
 
 traceWithId :: (a -> String) -> a -> a
 traceWithId f x = trace (f x) x
@@ -49,6 +49,11 @@ instructions :: String -> State World ()
 instructions s = do
   mapM_ (move 0) $ parseInput s
   logT
+
+logT :: State World ()
+logT = do
+  t_ <- gets $ view (_2 . at 9)
+  for_ t_ $ \t -> _1 %= Set.insert t
 
 move :: Int -> (Point, Int) -> State World ()
 move n (d,m) = replicateM_ m $ do
@@ -63,11 +68,6 @@ move n (d,m) = replicateM_ m $ do
 
   for_ ((,) <$> h_ <*> t_) $ \(h,t) ->
     when (not (touching h t)) (moveTail (succ n))
-
-logT :: State World ()
-logT = do
-  t_ <- gets $ view (_2 . at 9)
-  for_ t_ $ \t -> _1 %= Set.insert t
 
 moveTail :: Int -> State World ()
 moveTail n = do
