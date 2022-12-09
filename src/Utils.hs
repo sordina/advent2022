@@ -3,6 +3,7 @@
 module Utils where
 
 import qualified Data.Map as Map
+import Debug.Trace
 import Control.Monad (liftM2)
 
 newtype ShowString = Show String
@@ -30,3 +31,6 @@ parseGrid' f s = Map.fromList cs
 
 crossProductZero :: (Num a, Num b, Enum a, Enum b) => (a, b) -> [(a, b)]
 crossProductZero (a,b) = liftM2 (,) [0..a] [0..b]
+
+traceWithId :: (a -> String) -> a -> a
+traceWithId f x = trace (f x) x
