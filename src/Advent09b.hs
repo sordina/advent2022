@@ -39,7 +39,7 @@ type Point = V2 Int
 type World = (Set.Set Point, Seq.Seq Point)
 
 day9b :: String -> Int
-day9b s = Set.size $ traceWithId drawTails $ fst $ execState (instructions s) (Set.empty, knots)
+day9b s = Set.size $ {- traceWithId drawTails $ -} fst $ execState (instructions s) (Set.empty, knots)
 
 knots :: Seq.Seq Point
 knots = Seq.fromList (replicate 10 0)
