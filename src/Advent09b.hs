@@ -56,6 +56,10 @@ logT = do
   t_ <- gets $ preview (_2 . ix 9)
   for_ t_ $ \t ->_1 %= Set.insert t
 
+-- Bad, Good!
+getsJ :: MonadState s f => (s -> Maybe b) -> f b
+getsJ f = fromMaybe (error "Got Nothing!") <$> gets f
+
 move :: Int -> (Point, Int) -> State World ()
 move n (d,m) = replicateM_ m $ do
   logT
@@ -64,23 +68,17 @@ move n (d,m) = replicateM_ m $ do
   _2 . ix n %= add d
 
   -- Get the current positions of head and tail
-  h_ <- gets $ preview (_2 . ix n)
+  h <- getsJ $ preview (_2 . ix n)
   t_ <- gets $ preview (_2 . ix (succ n))
 
-  fromMaybe (pure ()) $ do
-    h <- h_
-    t <- t_
-    pure $ when (not (touching h t)) (moveTail (succ n))
+  for_ t_ $ \t -> when (not (touching h t)) (moveTail (succ n))
 
 moveTail :: Int -> State World ()
 moveTail n = do
-  h_ <- gets $ preview (_2 . ix (pred n))
-  t_ <- gets $ preview (_2 . ix n)
-  fromMaybe (pure ()) $ do
-    h <- h_
-    t <- t_
-    let d = (signum *** signum) $ diff h t
-    pure $ move n (d,1)
+  h <- getsJ $ preview (_2 . ix (pred n))
+  t <- getsJ $ preview (_2 . ix n)
+  let d = (signum *** signum) $ diff h t
+  move n (d,1)
 
 diff :: Point -> Point -> Point
 diff (a,b) (c,d) = (a-c,b-d)
