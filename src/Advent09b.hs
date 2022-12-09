@@ -74,14 +74,8 @@ moveTail n = do
   h_ <- gets $ view (_2 . at (pred n))
   t_ <- gets $ view (_2 . at n)
   for_ ((,) <$> h_ <*> t_) $ \(h,t) -> do
-    let d = (sign *** sign) $ diff h t
+    let d = (signum *** signum) $ diff h t
     move n (d,1)
-
-sign :: Int -> Int
-sign w
-  | w > 0 = 1
-  | w < 0 = -1
-  | otherwise = 0
 
 diff :: Point -> Point -> Point
 diff (a,b) (c,d) = (a-c,b-d)
