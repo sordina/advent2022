@@ -62,4 +62,5 @@ executable advent2022
     unordered-containers,
     megaparsec,
     generic-lens,
-    data-memocombinators
+    data-memocombinators,
+    linear
