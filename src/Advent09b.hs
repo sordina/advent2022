@@ -8,6 +8,7 @@
 module Advent09b where
 
 import Debug.Trace
+import Data.Maybe
 import Data.Foldable (for_)
 import Control.Lens
 import Control.Arrow ((***))
@@ -15,7 +16,7 @@ import Control.Monad
 import Control.Monad.State
 import Text.RawString.QQ (r)
 import qualified Data.Set as Set
-import qualified Data.IntMap.Strict as IntMap
+import qualified Data.Sequence as Seq
 
 -- | Testing day9b
 -- >>> day9b testInput
@@ -34,7 +35,7 @@ U 20
 |]
 
 type Point = (Int,Int)
-type World = (Set.Set Point, IntMap.IntMap Point)
+type World = (Set.Set Point, Seq.Seq Point)
 
 day9b :: String -> Int
 day9b s = Set.size $ {- traceWithId drawTails $ -} fst $ execState (instructions s) (Set.empty, knots)
@@ -42,8 +43,8 @@ day9b s = Set.size $ {- traceWithId drawTails $ -} fst $ execState (instructions
 traceWithId :: (a -> String) -> a -> a
 traceWithId f x = trace (f x) x
 
-knots :: IntMap.IntMap Point
-knots = IntMap.fromList (zip [0..9] (repeat (0,0)))
+knots :: Seq.Seq Point
+knots = Seq.fromList (replicate 10 (0,0))
 
 instructions :: String -> State World ()
 instructions s = do
@@ -52,30 +53,34 @@ instructions s = do
 
 logT :: State World ()
 logT = do
-  t_ <- gets $ view (_2 . at 9)
-  for_ t_ $ \t -> _1 %= Set.insert t
+  t_ <- gets $ preview (_2 . ix 9)
+  for_ t_ $ \t ->_1 %= Set.insert t
 
 move :: Int -> (Point, Int) -> State World ()
 move n (d,m) = replicateM_ m $ do
   logT
 
   -- Move the head and get its new position
-  _2 . at n . _Just %= add d
+  _2 . ix n %= add d
 
   -- Get the current positions of head and tail
-  h_ <- gets $ view (_2 . at n)
-  t_ <- gets $ view (_2 . at (succ n))
+  h_ <- gets $ preview (_2 . ix n)
+  t_ <- gets $ preview (_2 . ix (succ n))
 
-  for_ ((,) <$> h_ <*> t_) $ \(h,t) ->
-    when (not (touching h t)) (moveTail (succ n))
+  fromMaybe (pure ()) $ do
+    h <- h_
+    t <- t_
+    pure $ when (not (touching h t)) (moveTail (succ n))
 
 moveTail :: Int -> State World ()
 moveTail n = do
-  h_ <- gets $ view (_2 . at (pred n))
-  t_ <- gets $ view (_2 . at n)
-  for_ ((,) <$> h_ <*> t_) $ \(h,t) -> do
+  h_ <- gets $ preview (_2 . ix (pred n))
+  t_ <- gets $ preview (_2 . ix n)
+  fromMaybe (pure ()) $ do
+    h <- h_
+    t <- t_
     let d = (signum *** signum) $ diff h t
-    move n (d,1)
+    pure $ move n (d,1)
 
 diff :: Point -> Point -> Point
 diff (a,b) (c,d) = (a-c,b-d)
