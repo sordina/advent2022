@@ -9,6 +9,7 @@
 module Advent10 where
 
 import Utils
+import Data.List.Split (chunksOf)
 import Text.RawString.QQ (r)
 
 data Instruction
@@ -23,6 +24,15 @@ data Instruction
 -- | Testing day10
 -- >>> day10 testInput2
 -- 13140
+
+-- | Testing day10b
+-- >>> putStr $ day10b testInput2
+-- ##..##..##..##..##..##..##..##..##..##..
+-- ###...###...###...###...###...###...###.
+-- ####....####....####....####....####....
+-- #####.....#####.....#####.....#####.....
+-- ######......######......######......####
+-- #######.......#######.......#######.....
 
 day10 :: String -> Integer
 day10 s = sum $ map (\x-> fromIntegral x * (solution !! pred x)) significantCycles
@@ -42,8 +52,17 @@ parseInput :: [String] -> Instruction
 parseInput ["noop"] = Nop
 parseInput ["addx", n] = Add (read n)
 
-day10b :: String -> Int
-day10b s = error "TODOb"
+day10b :: String -> String
+day10b s = unlines $ chunksOf 40 $ map draw [0..pred(6*40)]
+  where
+  solution = registers s
+  draw x =
+    if i >= v-1 && i <= v+1
+      then '#'
+      else '.'
+    where
+      i = x `mod` 40
+      v = fromIntegral $ solution !! x
 
 significantCycles :: [Int]
 significantCycles = [ 20, 60, 100, 140, 180, 220 ]
