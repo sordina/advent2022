@@ -33,7 +33,33 @@ day11 s = product $ take 2 $ reverse $ sort $ map fst $ toList result
   parsed = parseInput s
 
 day11b :: String -> Integer
-day11b = error "TODOb"
+day11b s = product $ take 2 $ reverse $ sort $ map fst $ toList result
+  where
+  result = execState evalB (fmap (0,) parsed)
+  parsed = parseInput s
+
+evalB :: State World ()
+evalB = do
+  ids <- gets (toList . fmap (who . snd))
+  -- Take the compound of all dispatch moduli
+  modulus <- gets (product . toListOf (traverse . _2 . #next . _1))
+  replicateM_ 10000 (evalRoundB ids modulus)
+
+evalRoundB :: [Int] -> Integer -> State World ()
+evalRoundB ids modulus = mapM_ (evalMonkeyB modulus) ids
+
+evalMonkeyB :: Integer -> Int -> State World ()
+evalMonkeyB modulus x = do
+  evalWhile (pop x) $ \i -> do
+    ix x . _1 %= succ
+    n <- evalExp x i
+    let n' = n `mod` modulus
+    t <- gets (preview (ix x . _2 . #next))
+    case t of
+      Nothing -> error "Couldn't find associated next"
+      Just (q,a,b)
+        | n `mod` q == 0 -> evalThrowTo a n'
+        | otherwise      -> evalThrowTo b n'
 
 -- * Evaluation
 
