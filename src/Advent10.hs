@@ -8,7 +8,6 @@
 
 module Advent10 where
 
-import Utils
 import Data.List.Split (chunksOf)
 import Text.RawString.QQ (r)
 
@@ -51,6 +50,7 @@ interpret ns (Add n) = [last ns, n + last ns]
 parseInput :: [String] -> Instruction
 parseInput ["noop"] = Nop
 parseInput ["addx", n] = Add (read n)
+parseInput s = error $ "Unrecognized operator: " <> show s
 
 day10b :: String -> String
 day10b s = unlines $ chunksOf 40 $ map draw [0..pred(6*40)]

@@ -6,12 +6,10 @@
 
 module Advent07 where
 
-import Debug.Trace
 import Data.Char
-import Data.List (sort)
 import Data.Either
 import Data.Bifunctor
-import Data.List (foldl')
+import Data.List (foldl', sort)
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import Control.Monad
@@ -40,6 +38,7 @@ day7 = sum . filter (<= 100000) . map countTrie . subTries . {- traceShowId . -}
 -- >>> day7 testInput
 -- 95437
 
+testInput :: String
 testInput = drop 1 [r|
 $ cd /
 $ ls
@@ -72,7 +71,7 @@ buildTree :: [Line] -> Trie
 buildTree = snd . foldl' process ([], emptyTrie)
 
 insertTrie :: Path -> File -> Trie -> Trie
-insertTrie [] f@(s,n) (Nodes t) = Nodes $ Map.insert n (Left f) t
+insertTrie [] f@(_,n) (Nodes t) = Nodes $ Map.insert n (Left f) t
 insertTrie (x:xs) f (Nodes t) =
   case Map.lookup x t of
     Nothing -> Nodes $ Map.insert x (Right $ insertTrie xs f emptyTrie) t
@@ -83,9 +82,9 @@ emptyTrie :: Trie
 emptyTrie = Nodes Map.empty
 
 countTrie :: Trie -> Int
-countTrie (Nodes t) = sum (map fst ls) + sum (map countTrie rs)
+countTrie (Nodes t) = sum (map fst ll) + sum (map countTrie rs)
   where
-  ls = lefts es 
+  ll = lefts es 
   rs = rights es 
   es = Map.elems t
 
@@ -110,12 +109,12 @@ drawTrie p n t@(Nodes t') = [ "- " <> p <> " (dir) [" <> show (countTrie t) <> "
 process :: State -> Line -> State
 process (l,m) = \case
   Left (Right ()) -> (l,m) -- ls: ignore
-  Left (Left dir) -> -- cd
-    case dir of
+  Left (Left d) -> -- cd
+    case d of
       "/" -> ([], m)
       ".." -> (tail l, m)
-      d -> (d:l, m)
-  Right (Left d) -> (l,m) -- directory: ignore
+      _ -> (d:l, m)
+  Right (Left _) -> (l,m) -- directory: ignore
   Right (Right f) -> (l, insertTrie (reverse l) f m)
 
 -- * Parsers
@@ -130,9 +129,16 @@ line = do
 output :: ReadP Output
 output = fmap Left dir <|> fmap Right file
 
+digit :: ReadP Char
 digit  = satisfy isDigit
+
+digits :: ReadP String
 digits = many1 digit
+
+dir :: ReadP String
 dir = string "dir " *> look
+
+file :: ReadP (Int, String)
 file = do
   ds <- read <$> digits
   char ' '
