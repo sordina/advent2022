@@ -42,6 +42,7 @@ import Text.ParserCombinators.ReadP
 
 -- | Testing day11
 -- >>> day11 testInput
+-- 10605
 
 day11 :: String -> Integer
 day11 s = product $ take 2 $ reverse $ sort $ map fst $ toList result
