@@ -54,9 +54,8 @@ check (Branches [])     (Branches _ys)    = LT
 check (Branches _xs)    (Branches [])     = GT
 check (Branches (x:xs)) (Branches (y:ys)) =
   case check x y of
-    LT -> LT
-    GT -> GT
     EQ -> check (Branches xs) (Branches ys)
+    c  -> c
 
 -- * Parser
 
