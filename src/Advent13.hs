@@ -38,10 +38,10 @@ day13 = sum . map fst . filter snd . zip [1..] . map ((== LT) . uncurry check) .
 day13b :: String -> Integer
 day13b s = product $ map snd $ filter (isDecoder . fst) $ flip zip [1..] $ sort trees
   where
-  trees = parseInputList (s <> "\n" <> decoder2 <> "\n" <> decoder6)
-  isDecoder t = show t `elem` [decoder2, decoder6]
-  decoder2 = "[[2]]"
-  decoder6 = "[[6]]"
+  trees = parseInputList s <> [decoder2, decoder6]
+  isDecoder t = t `elem` [decoder2, decoder6]
+  decoder2 = parseLine "[[2]]"
+  decoder6 = parseLine "[[6]]"
 
 -- * Solution
 
