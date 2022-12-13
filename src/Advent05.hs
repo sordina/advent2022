@@ -1,20 +1,17 @@
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Advent05 where
 
-import Debug.Trace
-import Data.Char
-import Data.List
+import Data.Char ( isDigit, isSpace )
+import Data.List ( foldl', transpose )
 import Data.Map (Map)
 import qualified Data.Map as Map
-import Data.List.Split
-import Control.Arrow
-import Control.Lens
-import Control.Monad
-import Control.Applicative hiding (many)
+import Data.List.Split ( splitOn )
+import Control.Arrow ( Arrow((&&&)) )
+import Control.Lens ( (&), _Just, (%~), At(at) )
+import Control.Monad ( void )
 import Text.ParserCombinators.ReadP
+    ( ReadP(), char, eof, many1, readP_to_S, satisfy, string )
 
 type State = Map Int String
 
@@ -24,9 +21,16 @@ day5 = map (head . snd) . Map.toAscList . interpret . (parseState . head &&& map
 parseState :: [String] -> State
 parseState = Map.fromList . map (read.take 1 &&& reverse . filter (not . isSpace) . tail) . filter (\x -> not (null x) && isDigit (head x)) . transpose . reverse
 
+digit :: ReadP Char
 digit  = satisfy isDigit
+
+digits :: ReadP [Char]
 digits = many1 digit
+
+spaces :: ReadP [Char]
 spaces = many1 (char ' ')
+
+instruction :: ReadP (Int, Int, Int)
 instruction = do
   void $ string "move "
   n <- digits <* spaces
@@ -40,6 +44,7 @@ instruction = do
 parseInstruction :: String -> (Int,Int,Int)
 parseInstruction = fst . head . readP_to_S instruction
 
+example :: String
 example = "move 5 from 1 to 8"
 
 interpret :: (State, [(Int,Int,Int)]) -> State

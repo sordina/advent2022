@@ -7,17 +7,18 @@
 
 module Advent09 where
 
-import Debug.Trace
-import Control.Lens
-import Control.Monad
-import Control.Monad.State
+import Control.Monad ( replicateM_, unless )
 import Text.RawString.QQ (r)
 import qualified Data.Set as Set
+import Control.Monad.State ( State, gets, execState )
+import Control.Lens
+    ( view, (%=), Field1(_1), Field2(_2), Field3(_3) )
 
 -- | Testing day9
 -- >>> day9 testInput
 -- 13
 
+testInput :: String
 testInput = drop 1 [r|
 R 4
 U 4
@@ -44,12 +45,12 @@ move (d,m) = replicateM_ m $ do
   _1 %= Set.insert t
   _2 %= add d
   h <- gets (view _2)
-  when (not (touching h t)) (moveTail h t)
+  unless (touching h t) (moveTail h t)
 
 moveTail :: Point -> Point -> State World ()
 moveTail h t = do
   let
-    d@(x,y) = diff h t
+    d@(_,_) = diff h t
     d' = case d of
            ( 2,y) -> ( 1, y)
            (-2,y) -> (-1, y)
@@ -57,8 +58,8 @@ moveTail h t = do
            (x,-2) -> (x,-1)
            z -> error (show z)
   _3 %= add d'
-  t <- gets (view _3)
-  _1 %= Set.insert t
+  t' <- gets (view _3)
+  _1 %= Set.insert t'
 
 diff :: Point -> Point -> Point
 diff (a,b) (c,d) = (a-c,b-d)
@@ -76,4 +77,5 @@ parseInput = map item . lines
   item ('D':' ':t) = ((0, 1), read t)
   item ('L':' ':t) = ((-1,0), read t)
   item ('R':' ':t) = (( 1,0), read t)
+  item i = error $ "Couldn't parse item: " <> i
 

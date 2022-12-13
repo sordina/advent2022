@@ -1,7 +1,4 @@
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE NegativeLiterals #-}

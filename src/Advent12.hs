@@ -11,7 +11,7 @@
 module Advent12 where
 
 import qualified Data.Map as Map
-import Utils
+import Utils ( parseGrid' )
 import Text.RawString.QQ (r)
 import Algorithm.Search (dijkstra)
 import Data.Char (ord)

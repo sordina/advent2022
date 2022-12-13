@@ -13,9 +13,18 @@ module Advent13 where
 
 import Text.RawString.QQ (r)
 import Data.Char (isDigit)
-import Text.ParserCombinators.ReadP hiding (optional, get)
 import Data.List.Split (chunksOf)
 import Data.List (sort)
+import Text.ParserCombinators.ReadP
+    ( ReadP,
+      char,
+      eof,
+      look,
+      many1,
+      pfail,
+      readP_to_S,
+      satisfy,
+      sepBy )
 
 data Tree a = Leaf a | Branches [Tree a]
   deriving Eq

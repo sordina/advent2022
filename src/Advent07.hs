@@ -3,19 +3,21 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE InstanceSigs #-}
 
 module Advent07 where
 
-import Data.Char
-import Data.Either
-import Data.Bifunctor
-import Data.List (foldl', sort)
+import Data.Char ( isDigit )
+import Data.Either ( lefts, rights )
+import Data.Bifunctor ( Bifunctor(bimap) )
+import Data.List (foldl')
 import qualified Data.Map as Map
 import qualified Data.Set as Set
-import Control.Monad
-import Control.Applicative hiding (many)
-import Text.ParserCombinators.ReadP
+import Control.Monad ( void )
+import Control.Applicative ( Alternative((<|>)) )
 import Text.RawString.QQ (r)
+import Text.ParserCombinators.ReadP
+    ( ReadP, char, look, many1, readP_to_S, satisfy, string )
 
 type Command = Either String ()
 type Output = Either String File
@@ -27,10 +29,12 @@ type State = (Path, Trie)
 
 newtype Trie = Nodes { unNodes :: Map.Map String (Either File Trie) } deriving (Eq)
 
-instance Show Trie where show t = unlines $ drawTrie "/" 2 t
+instance Show Trie where
+  show :: Trie -> String
+  show t = unlines $ drawTrie "/" 2 t
 
 day7 :: String -> Int
-day7 = sum . filter (<= 100000) . map countTrie . subTries . {- traceShowId . -} buildTree . map parse . lines
+day7 = sum . filter (<= 100000) . map countTrie . subTries . {- traceShowId . -}  {- traceShowId . -} buildTree . map parse . lines
 
 -- * Tests
 
@@ -84,14 +88,14 @@ emptyTrie = Nodes Map.empty
 countTrie :: Trie -> Int
 countTrie (Nodes t) = sum (map fst ll) + sum (map countTrie rs)
   where
-  ll = lefts es 
-  rs = rights es 
+  ll = lefts es
+  rs = rights es
   es = Map.elems t
 
 subTries :: Trie -> [Trie]
 subTries p@(Nodes t) = p : (subTries =<< rs)
   where
-  rs = rights es 
+  rs = rights es
   es = Map.elems t
 
 withKeys :: Bifunctor f => Map.Map k (f v a) -> [f (k,v) (k,a)]
@@ -150,7 +154,7 @@ command = do
   fmap Left cd <|> (Right () <$ ls)
 
 cd :: ReadP String
-cd = do 
+cd = do
   void $ string "cd "
   look
 
@@ -163,7 +167,7 @@ parse = fst . head . readP_to_S line
 -- * Part B
 
 day7b :: String -> Int
-day7b s = head $ sort $ filter (\x -> disk - (space - x) >= required) counts
+day7b s = minimum (filter (\x -> disk - (space - x) >= required) counts)
   where
   tree  = buildTree $ map parse $ lines s
   counts = map countTrie (subTries tree)

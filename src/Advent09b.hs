@@ -8,16 +8,16 @@
 
 module Advent09b where
 
-import Utils (traceWithId)
-import Data.Maybe
-import Linear.V2
+import Data.Maybe ( fromMaybe )
+import Linear.V2 ( V2(..), R1(_x), R2(_y) )
 import Data.Foldable (for_)
-import Control.Lens
-import Control.Monad
-import Control.Monad.State
+import Control.Monad ( replicateM_, unless )
 import Text.RawString.QQ (r)
 import qualified Data.Set as Set
 import qualified Data.Sequence as Seq
+import Control.Monad.State ( State, MonadState, gets, execState )
+import Control.Lens
+    ( preview, view, (%=), Ixed(ix), Field1(_1), Field2(_2) )
 
 -- | Testing day9b
 -- >>> day9b testInput
@@ -39,7 +39,7 @@ type Point = V2 Int
 type World = (Set.Set Point, Seq.Seq Point)
 
 day9b :: String -> Int
-day9b s = Set.size $ {- traceWithId drawTails $ -} fst $ execState (instructions s) (Set.empty, knots)
+day9b s = Set.size $ {- traceWithId drawTails $ -}  {- traceWithId drawTails $ -}  {- traceWithId drawTails $ -}  {- traceWithId drawTails $ -} fst $ execState (instructions s) (Set.empty, knots)
 
 knots :: Seq.Seq Point
 knots = Seq.fromList (replicate 10 0)
@@ -56,7 +56,7 @@ logT = do
 
 -- Bad, Good!
 getsJ :: MonadState s f => (s -> Maybe b) -> f b
-getsJ f = fromMaybe (error "Got Nothing!") <$> gets f
+getsJ f = gets (fromMaybe (error "Got Nothing!") . f)
 
 move :: Int -> (Point, Int) -> State World ()
 move n (d,m) = replicateM_ m $ do
@@ -69,7 +69,7 @@ move n (d,m) = replicateM_ m $ do
   h <- getsJ $ preview (_2 . ix n)
   t_ <- gets $ preview (_2 . ix (succ n))
 
-  for_ t_ $ \t -> when (not (touching h t)) (moveTail (succ n))
+  for_ t_ $ \t -> unless (touching h t) (moveTail (succ n))
 
 moveTail :: Int -> State World ()
 moveTail n = do

@@ -2,8 +2,8 @@
 
 module Advent01 where
 
-import Data.List
-import Data.List.Split
+import Data.List ( sort )
+import Data.List.Split ( splitOn )
 
 day1 :: String -> Integer
 day1 = maximum . map (sum . map (read @Integer)) . splitOn [""] . lines

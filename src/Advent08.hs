@@ -6,9 +6,8 @@
 
 module Advent08 where
 
-import Debug.Trace
 import Control.Arrow (first, second)
-import Utils
+import Utils ( parseGrid' )
 import Data.List (unfoldr)
 import qualified Data.Map as Map
 import Text.RawString.QQ (r)

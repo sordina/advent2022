@@ -10,18 +10,35 @@
 
 module Advent11 where
 
-import Data.Char
+import Data.Char ( isDigit )
 import Data.List (sort)
-import GHC.Generics
+import GHC.Generics ( Generic )
 import Data.Generics.Labels ()
 import Data.Foldable (toList)
 import Text.RawString.QQ (r)
-import Control.Monad
-import Control.Monad.State
-import Control.Lens
-import Control.Applicative hiding (many)
-import Text.ParserCombinators.ReadP hiding (optional, get)
 import qualified Data.Sequence as Seq
+import Control.Applicative ( optional, Alternative((<|>)) )
+import Control.Monad.State ( State, replicateM_, void, gets, execState )
+import Control.Lens
+    ( (^?),
+      preview,
+      toListOf,
+      (<<%=),
+      (%=),
+      Ixed(ix),
+      Field1(_1),
+      Field2(_2) )
+import Text.ParserCombinators.ReadP
+    ( ReadP,
+      char,
+      eof,
+      look,
+      many,
+      many1,
+      readP_to_S,
+      satisfy,
+      sepBy1,
+      string )
 
 -- | Testing day11
 -- >>> day11 testInput
