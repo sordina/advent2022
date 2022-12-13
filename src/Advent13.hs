@@ -15,13 +15,19 @@ import Text.RawString.QQ (r)
 import Data.Char (isDigit)
 import Text.ParserCombinators.ReadP hiding (optional, get)
 import Data.List.Split (chunksOf)
+import Data.List (sort)
 
 data Tree a = Leaf a | Branches [Tree a]
+  deriving Eq
 
 instance Show a => Show (Tree a) where
   show :: Show a => Tree a -> String
   show (Leaf x) = show x
   show (Branches xs) = show xs
+
+instance Ord a => Ord (Tree a) where
+  compare :: Ord a => Tree a -> Tree a -> Ordering
+  a `compare` b = a `check` b
 
 -- | Testing day13
 -- >>> day13 testInput
@@ -30,11 +36,16 @@ day13 :: String -> Int
 day13 = sum . map fst . filter snd . zip [1..] . map ((== LT) . uncurry check) . parseInput
 
 day13b :: String -> Integer
-day13b s = error "TODO"
+day13b s = product $ map snd $ filter (isDecoder . fst) $ flip zip [1..] $ sort trees
+  where
+  trees = parseInputList (s <> "\n" <> decoder2 <> "\n" <> decoder6)
+  isDecoder t = show t `elem` [decoder2, decoder6]
+  decoder2 = "[[2]]"
+  decoder6 = "[[6]]"
 
 -- * Solution
 
-check :: Tree Integer -> Tree Integer -> Ordering
+check :: Ord a => Tree a -> Tree a -> Ordering
 check x@(Leaf _)      y@(Branches _)      = check (Branches [x]) y
 check x@(Branches _)  y@(Leaf _)          = check x (Branches [y])
 check (Leaf x)          (Leaf y)          = x `compare` y
@@ -50,7 +61,10 @@ check (Branches (x:xs)) (Branches (y:ys)) =
 -- * Parser
 
 parseInput :: String -> [(Tree Integer, Tree Integer)]
-parseInput = map pair . chunksOf 2 . map parseLine . filter (not.null) . lines
+parseInput = map pair . chunksOf 2 . parseInputList
+
+parseInputList :: String -> [Tree Integer]
+parseInputList = map parseLine . filter (not.null) . lines
 
 pair :: [x] -> (x,x)
 pair [a,b] = (a,b)
