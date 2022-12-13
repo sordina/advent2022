@@ -17,6 +17,7 @@ import qualified Advent09b
 import qualified Advent10
 import qualified Advent11
 import qualified Advent12
+import qualified Advent13
 
 interactShow :: Show a => (String -> a) -> IO ()
 interactShow f = interact ((++ "\n") . show . f)
@@ -47,10 +48,12 @@ days =
     , ("11b", interactShow Advent11.day11b)
     , ("12",  interactShow Advent12.day12)
     , ("12b", interactShow Advent12.day12b)
+    , ("13",  interactShow Advent13.day13)
+    , ("13b", interactShow Advent13.day13b)
     ]
 
 help :: a
-help = error $ "Usage: advent2021 (" ++ intercalate " | " (map fst days) ++ ")"
+help = error $ "Usage: advent2022 (" ++ intercalate " | " (map fst days) ++ ")"
 
 main :: IO ()
 main = do
