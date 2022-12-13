@@ -36,7 +36,7 @@ instance Show a => Show (Tree a) where
 
 instance Ord a => Ord (Tree a) where
   compare :: Ord a => Tree a -> Tree a -> Ordering
-  a `compare` b = a `check` b
+  compare = check
 
 -- | Testing day13
 -- >>> day13 testInput
