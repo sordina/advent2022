@@ -41,7 +41,7 @@ instance Ord a => Ord (Tree a) where
 -- | Testing day13
 -- >>> day13 testInput
 -- 13
--- 
+--
 day13 :: String -> Int
 day13 = sum . map fst . filter snd . zip [1..] . map ((== LT) . uncurry check) . parseInput
 

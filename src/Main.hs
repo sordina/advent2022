@@ -43,7 +43,7 @@ days =
     , ("09",  interactShow Advent09.day9)
     , ("09b", interactShow Advent09b.day9b)
     , ("10",  interactShow Advent10.day10)
-    , ("10b", interact ((++"\n") . Advent10.day10b))
+    , ("10b", interact ((++"\n") . Advent10.day10b ' '))
     , ("11",  interactShow Advent11.day11)
     , ("11b", interactShow Advent11.day11b)
     , ("12",  interactShow Advent12.day12)

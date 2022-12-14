@@ -22,7 +22,7 @@ data Instruction
 -- 13140
 
 -- | Testing day10b
--- >>> putStr $ day10b testInput2
+-- >>> putStr $ day10b '.' testInput2
 -- ##..##..##..##..##..##..##..##..##..##..
 -- ###...###...###...###...###...###...###.
 -- ####....####....####....####....####....
@@ -49,14 +49,14 @@ parseInput ["noop"] = Nop
 parseInput ["addx", n] = Add (read n)
 parseInput s = error $ "Unrecognized operator: " <> show s
 
-day10b :: String -> String
-day10b s = unlines $ chunksOf 40 $ map draw [0..pred(6*40)]
+day10b :: Char -> String -> String
+day10b c s = unlines $ chunksOf 40 $ map draw [0..pred(6*40)]
   where
   solution = registers s
   draw x =
     if i >= v-1 && i <= v+1
       then '#'
-      else '.'
+      else c
     where
       i = x `mod` 40
       v = fromIntegral $ solution !! x
