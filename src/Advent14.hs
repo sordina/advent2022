@@ -11,7 +11,6 @@
 
 module Advent14 where
 
-import Debug.Trace
 import Text.RawString.QQ (r)
 import Data.List.Split (splitOn)
 import Utils (fixEq)
