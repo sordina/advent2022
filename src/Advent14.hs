@@ -18,6 +18,7 @@ import qualified Data.Set as Set
 
 -- | Testing day14
 -- >>> day14 testInput
+-- 24
 --
 day14 :: String -> Int
 day14 = pred . length . takeWhileJust . pourSand (500,0) . Set.unions . map rasterize. parseInput
