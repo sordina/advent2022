@@ -23,8 +23,8 @@ import qualified Data.Set as Set
 day14 :: String -> Int
 day14 = pred . length . takeWhileJust . pourSand (500,0) . Set.unions . map rasterize. parseInput
 
-day14b :: String -> Integer
-day14b s = error "TODOb"
+day14b :: String -> Int
+day14b = length . takeWhile (not . Set.member (500,0)) . pourSandB (500,0) . Set.unions . map rasterize. parseInput
 
 -- * Types
 
@@ -39,23 +39,36 @@ type Raster = Set.Set Point
 pourSand :: Point -> Raster -> [Maybe Raster]
 pourSand p w = iterate (>>= drip p) (Just w)
 
+pourSandB :: Point -> Raster -> [Raster]
+pourSandB p w = iterate (dripB f p) w
+  where
+  f = 2 + Set.findMax (Set.map snd w)
+
 drip :: Point -> Raster -> Maybe Raster
 drip p w = flip Set.insert w <$> fixEq (>>= fall w) (Just p)
+
+dripB :: Int -> Point -> Raster -> Raster
+dripB f p w = flip Set.insert w $ fixEq (fallB f w) p
 
 fall :: Raster -> Point -> Maybe Point
 fall w p
   | below p w = Just $ move w p
   | otherwise = Nothing
 
+fallB :: Int -> Raster -> Point -> Point
+fallB f w p@(_,y)
+  | succ y == f = p
+  | otherwise   = move w p
+
 below :: Point -> Raster -> Bool
 below (x,y) = any (\(x',y') -> x == x' && y < y')
 
 move :: Raster -> Point -> Point
 move w p
-  | down  p `notElem` w = down p
-  | left  p `notElem` w = left p
-  | right p `notElem` w = right p
-  | otherwise           = p
+  | not (down  p `Set.member` w) = down p
+  | not (left  p `Set.member` w) = left p
+  | not (right p `Set.member` w) = right p
+  | otherwise                    = p
 
 down, left, right :: Point -> Point
 down (x,y) = (x, succ y)
