@@ -11,6 +11,7 @@ extra-source-files:  README.md
 executable advent2022
   main-is: Main.hs
   other-modules:
+    Cuboids
     Utils
     Advent01
     Advent02
@@ -69,4 +70,5 @@ executable advent2022
     megaparsec,
     generic-lens,
     data-memocombinators,
-    linear
+    linear,
+    QuickCheck

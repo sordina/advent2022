@@ -8,13 +8,20 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE DataKinds #-}
 
 module Advent15 where
 
-import Text.RawString.QQ (r)
+-- $setup
+-- >>> import Test.QuickCheck.All
+
 import qualified Data.Set as Set
+import qualified Cuboids as Cuboid
+import Text.RawString.QQ (r)
 import Data.Char (isDigit)
 import Control.Monad (void)
+import Data.Foldable (find)
+import Data.Maybe (fromMaybe, mapMaybe)
 import Text.ParserCombinators.ReadP
     ( ReadP,
       char,
@@ -25,6 +32,7 @@ import Text.ParserCombinators.ReadP
       readP_to_S,
       satisfy
     )
+import Debug.Trace (traceShowId)
 
 -- | Testing day15
 -- >>> (solve 10 . parseInput) testInput
@@ -33,24 +41,90 @@ import Text.ParserCombinators.ReadP
 day15 :: String -> Int
 day15 = solve 2000000 . parseInput
 
+-- | Testing day15b
+-- >>> (solveB 20 . parseInput) testInput
+-- 56000011
+--
 day15b :: String -> Int
-day15b = error "TODOb"
+day15b = solveB 4000000 . parseInput
 
 -- * Types
 
 type Point = (Int,Int)
 type Beacon = (Point, Point)
 type Beacons = [Beacon]
+type Block = Cuboid.Cuboid 2
+type Blocks = Set.Set Block
 
 -- * Solution
 
 solve :: Int -> Beacons -> Int
 solve n = Set.size . Set.filter (\(_,y) -> y == n) . Set.unions . map (beacon n)
 
+solveB :: Int -> Beacons -> Int
+solveB b
+  = frequency
+  . fromMaybe (error "Couldn't find a solution")
+  . find (bounds b)
+  . Set.map cubeCenter
+  . Set.filter singleton
+  . foldr1 combine
+  . map (traceShowId . cubeInvert (cubeBound b) . traceShowId . cubify)
+
+combine :: Blocks -> Blocks -> Blocks
+combine a b = traceShowId $ Set.fromList $ mapMaybe (uncurry Cuboid.intersectCuboids) $ Set.toList $ Set.cartesianProduct a b
+
+-- | Testing roundtrip of unCubify . cubify
+-- prop> \p -> p == unBasis (basis p)
+-- 
+basis :: Point -> Point
+basis (x,y) = (x+y,y-x)
+
+unBasis :: Point -> Point
+unBasis (i,j) = (x,y)
+  where
+  x = i - (j + i) `div` 2
+  y = (j + i) `div` 2
+
+cubify :: Beacon -> Block
+cubify (p1@(x,y),p2) = Cuboid.mkVec2 (is,js)
+  where
+  is      = (bi,ti)
+  js      = (bj,tj)
+  (bi,bj) = basis (x,y-m)
+  (ti,tj) = basis (x,y+m)
+  m       = manhattan p1 p2
+
+cubeInvert :: Block -> Block -> Blocks
+cubeInvert bs c = Set.delete c $ Set.fromList $ Cuboid.zipWithMVec outside bs c
+  where
+  outside (bl,bh) (cl,ch) = filter (uncurry (<=)) [(bl,pred cl), (cl,ch), (succ ch,bh)]
+
+cubeBound :: Int -> Block
+cubeBound n = Cuboid.mkVec2 ((ax,cx),(ay,cy))
+  where
+  (ax,ay) = basis (0,0)
+  (cx,cy) = basis (n,n)
+
+cuboidUnBasis :: Cuboid.Vec 2 Int -> Point
+cuboidUnBasis = unBasis . Cuboid.unVec2
+
+cubeCenter :: Block -> Point
+cubeCenter = cuboidUnBasis . Cuboid.center
+
+singleton :: Block -> Bool
+singleton = all (uncurry (==))
+
+frequency :: Point -> Int
+frequency (x,y) = x * 4000000 + y
+
 beacon :: Int -> Beacon -> Set.Set Point
 beacon n (p@(x,_),p') = Set.fromList [(x',y') | x' <- [x-m..x+m], y' <- [n], (x',y') /= p', y' == n, manhattan p (x',y') <= m]
   where
   m = manhattan p p'
+
+bounds :: Int -> Point -> Bool
+bounds n (x,y) = x >= 0 && x <= n && y >= 0 && y <= n
 
 manhattan :: Point -> Point -> Int
 manhattan (x,y) (x',y') = abs (x-x') + abs (y-y')
