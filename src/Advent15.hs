@@ -17,7 +17,6 @@ module Advent15 where
 
 import qualified Data.Set as Set
 import qualified Cuboids as Cuboid
-import Utils
 import Text.RawString.QQ (r)
 import Data.Char (isDigit)
 import Control.Monad (void)
@@ -33,8 +32,8 @@ import Text.ParserCombinators.ReadP
       readP_to_S,
       satisfy
     )
-import Debug.Trace (traceShowId, traceShow)
-
+import Utils (IntX(..))
+import Control.Arrow ((***))
 -- | Testing day15
 -- >>> (solve 10 . parseInput) testInput
 -- 26
@@ -54,7 +53,7 @@ day15b = solveB 4000000 . parseInput
 type Point = (Int,Int)
 type Beacon = (Point, Point)
 type Beacons = [Beacon]
-type Block = Cuboid.Cuboid 2
+type Block = Cuboid.CuboidX 2
 type Blocks = Set.Set Block
 
 -- * Solution
@@ -73,7 +72,7 @@ solveB b
   . map (cubeInvert . cubify)
 
 combine :: Blocks -> Blocks -> Blocks
-combine a b = Set.fromList $ mapMaybe (uncurry Cuboid.intersectCuboids) $ Set.toList $ Set.cartesianProduct a b
+combine a b = Set.fromList $ mapMaybe (uncurry Cuboid.intersectCuboidsX) $ Set.toList $ Set.cartesianProduct a b
 
 -- | Testing intersection
 -- >>> Cuboid.intersectCuboids (Cuboid.mkVec2 ((0,10),(0,10))) (Cuboid.mkVec2 ((5,15),(5,15)))
@@ -118,8 +117,8 @@ unBasis (i,j) = (x,y)
 cubify :: Beacon -> Block
 cubify (p1@(x,y),p2) = Cuboid.mkVec2 (is,js)
   where
-  is      = (bi,ti)
-  js      = (bj,tj)
+  is      = (Val bi, Val ti)
+  js      = (Val bj, Val tj)
   (bi,bj) = basis (x-m,y)
   (ti,tj) = basis (x+m,y)
   m       = manhattan p1 p2
@@ -136,31 +135,22 @@ cubify (p1@(x,y),p2) = Cuboid.mkVec2 (is,js)
 
 -- | Testing cubeInvert
 -- >>> cubeInvert (Cuboid.mkVec2 ((5,6),(5,6)))
--- fromList [V2 <(-1000000000,4),(-1000000000,4)>,V2 <(-1000000000,4),(5,6)>,V2 <(-1000000000,4),(7,1000000000)>,V2 <(5,6),(-1000000000,4)>,V2 <(5,6),(7,1000000000)>,V2 <(7,1000000000),(-1000000000,4)>,V2 <(7,1000000000),(5,6)>,V2 <(7,1000000000),(7,1000000000)>]
+-- fromList [V2 <(-Inf,4),(-Inf,4)>,V2 <(-Inf,4),(5,6)>,V2 <(-Inf,4),(7,Inf)>,V2 <(5,6),(-Inf,4)>,V2 <(5,6),(7,Inf)>,V2 <(7,Inf),(-Inf,4)>,V2 <(7,Inf),(5,6)>,V2 <(7,Inf),(7,Inf)>]
 cubeInvert :: Block -> Blocks
 cubeInvert cube = Set.fromList $ drop 1 {- drops the leading sub cube -}  $ Cuboid.mapMVec regions cube
   where
-  regions (l,h) = [(l,h), (negate bigBound, pred l), (succ h, bigBound)]
-  bigBound = 1000000000 -- "INFINITY"
-
--- | Testing cubeBound
--- >>> cubeBound 0
--- V2 <(0,0),(0,0)>
--- >>> cubeBound 1
--- V2 <(0,0),(0,2)>
--- >>> cubeBound 10
--- V2 <(0,0),(0,20)>
-cubeBound :: Int -> Block
-cubeBound n = Cuboid.mkVec2 ((ai,ci),(aj,cj))
-  where
-  (ai,aj) = basis (0,0)
-  (ci,cj) = basis (n,n)
+  regions (l,h) = [(l,h), (NegInf, pred l), (succ h, Inf)]
 
 cuboidUnBasis :: Cuboid.Vec 2 Int -> Point
 cuboidUnBasis = unBasis . Cuboid.unVec2
 
 cubeCenter :: Block -> Point
-cubeCenter = cuboidUnBasis . Cuboid.center
+cubeCenter = cuboidUnBasis . Cuboid.center . fmap (finitize *** finitize)
+
+finitize :: IntX Int -> Int
+finitize Inf = error "Inf"
+finitize NegInf = error "NegInf"
+finitize (Val x) = x
 
 singleton :: Block -> Bool
 singleton = all (uncurry (==))
@@ -232,10 +222,8 @@ num = read <$> digits
 -- "Sensor at x=2, y=18: closest beacon is at x=-2, y=15"
 -- >>> cubify ((2,18),(-2,15))
 -- V2 <(-23,-9),(13,27)>
--- >>> cubeBound 20
--- V2 <(0,0),(0,40)>
 -- >>> cubeInvert  (cubify ((2,18),(-2,15)))
--- fromList [V2 <(-1000000000,-24),(-1000000000,12)>,V2 <(-1000000000,-24),(13,27)>,V2 <(-1000000000,-24),(28,1000000000)>,V2 <(-23,-9),(-1000000000,12)>,V2 <(-23,-9),(28,1000000000)>,V2 <(-8,1000000000),(-1000000000,12)>,V2 <(-8,1000000000),(13,27)>,V2 <(-8,1000000000),(28,1000000000)>]
+-- fromList [V2 <(-Inf,-24),(-Inf,12)>,V2 <(-Inf,-24),(13,27)>,V2 <(-Inf,-24),(28,Inf)>,V2 <(-23,-9),(-Inf,12)>,V2 <(-23,-9),(28,Inf)>,V2 <(-8,Inf),(-Inf,12)>,V2 <(-8,Inf),(13,27)>,V2 <(-8,Inf),(28,Inf)>]
 
 testInput :: String
 testInput = drop 1 [r|

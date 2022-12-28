@@ -25,13 +25,16 @@ import Data.Maybe (catMaybes)
 import GHC.TypeNats (Nat, natVal, KnownNat)
 import Data.Data (Proxy(..))
 import Data.List (intercalate)
+import Utils (IntX)
 
 -- * Types
 
 -- Elements are ranges in each dimension
 type Cuboid (n :: Nat) = Vec n P2
+type CuboidX (n :: Nat) = Vec n P2X
 
 type P2 = (Int,Int)
+type P2X = (IntX Int, IntX Int)
 
 newtype Vec (n :: Nat) a = UnsafeMkVec { getVector :: V.Vector a }
     deriving (Eq, Ord, Functor, Foldable, Traversable)
@@ -108,6 +111,10 @@ avg a b = (a+b) `div` 2
 intersectCuboids :: Cuboid n -> Cuboid n -> Maybe (Cuboid n)
 intersectCuboids l r = mapM (\(_,c,_) -> Just c) =<< zipWithMVec compositeR l r
 
+-- | A possible intersection of two cuboids
+intersectCuboidsX :: CuboidX n -> CuboidX n -> Maybe (CuboidX n)
+intersectCuboidsX l r = mapM (\(_,c,_) -> Just c) =<< zipWithMVec compositeR l r
+
 -- | The regions represented by sub-cuboids that belong to cube A and cube B
 --   the intersecting region is part of both sets.
 -- 
@@ -135,7 +142,7 @@ compositeCuboids rs1 rs2 = (possible gl &&& possible gr) <$> zipWithMVec composi
 -- Just ([],(1,2),[(0,0),(3,3)])
 -- Just ([(0,0),(3,3)],(1,2),[])
 -- 
-compositeR :: P2 -> P2 -> Maybe ([P2], P2, [P2])
+compositeR :: (Ord a, Enum a) => (a, a) -> (a, a) -> Maybe ([(a, a)], (a, a), [(a, a)])
 compositeR (a1,a2) (b1,b2)
     | a1 <= b1 && a2 >= b1 && a2 <= b2 = Just (s a1 (pred b1), (b1,a2), s (succ a2) b2) -- a overlapping b from the left
     | b1 <= a1 && b2 >= a1 && b2 <= a2 = Just (s (succ b2) a2, (a1,b2), s b1 (pred a1)) -- a overlapping b from the right
@@ -156,7 +163,7 @@ compositeR' (a1,a2) (b1,b2)
     s x y = catMaybes [significant x y]
 
 -- Creates significant (non-zero) regions
-significant :: Int -> Int -> Maybe (Int,Int)
+significant :: Ord b => b -> b -> Maybe (b, b)
 significant a b
     | a <= b = Just (a,b)
     | otherwise = Nothing
