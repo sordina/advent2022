@@ -45,6 +45,9 @@ instance Show a => Show (Vec n a) where
 zipWithMVec :: Monad m => (a -> b -> m c) -> Vec n a -> Vec n b -> m (Vec n c)
 zipWithMVec f (UnsafeMkVec a) (UnsafeMkVec b) = UnsafeMkVec <$> V.zipWithM f a b
 
+mapMVec :: Monad m => (a -> m b) -> Vec n a -> m (Vec n b)
+mapMVec f (UnsafeMkVec a) = UnsafeMkVec <$> V.mapM f a
+
 mkVec :: forall n a. KnownNat n => [a] -> Maybe (Vec n a)
 mkVec l
     | n == length l = Just (UnsafeMkVec (V.fromListN n l))
@@ -139,6 +142,16 @@ compositeR (a1,a2) (b1,b2)
     | a1 >= b1 && a2 <= b2             = Just ([], (a1,a2), s b1 (pred a1) ++ s (succ a2) b2) -- a inside b
     | b1 >= a1 && b2 <= a2             = Just (s a1 (pred b1) ++ s (succ b2) a2, (b1,b2), []) -- b inside a
     | otherwise                        = Nothing -- independent
+    where
+    s x y = catMaybes [significant x y]
+
+compositeR' :: P2 -> P2 -> ([P2], Maybe P2, [P2])
+compositeR' (a1,a2) (b1,b2)
+    | a1 <= b1 && a2 >= b1 && a2 <= b2 = (s a1 (pred b1), Just (b1,a2), s (succ a2) b2) -- a overlapping b from the left
+    | b1 <= a1 && b2 >= a1 && b2 <= a2 = (s (succ b2) a2, Just (a1,b2), s b1 (pred a1)) -- a overlapping b from the right
+    | a1 >= b1 && a2 <= b2             = ([], Just (a1,a2), s b1 (pred a1) ++ s (succ a2) b2) -- a inside b
+    | b1 >= a1 && b2 <= a2             = (s a1 (pred b1) ++ s (succ b2) a2, Just (b1,b2), []) -- b inside a
+    | otherwise                        = (s a1 a2, Nothing, s b1 b2) -- independent
     where
     s x y = catMaybes [significant x y]
 

@@ -1,10 +1,10 @@
-{-# LANGUAGE TypeApplications #-}
-
 module Utils where
 
 import qualified Data.Map as Map
+import qualified Data.Set as Set
 import Debug.Trace
 import Control.Monad (liftM2)
+import Control.Arrow ((&&&))
 
 newtype ShowString = Show String
 
@@ -34,3 +34,10 @@ crossProductZero (a,b) = liftM2 (,) [0..a] [0..b]
 
 traceWithId :: (a -> String) -> a -> a
 traceWithId f x = trace (f x) x
+
+drawSet :: Set.Set (Int,Int) -> String
+drawSet s = show (xl,yl) <> "~" <> show (xh,yh) <> "\n" <> (unlines $ map line [yl..yh])
+  where
+  line y  = map (\x -> if Set.member (x,y) s then '#' else ' ')  [xl..xh]
+  (xl,xh) = (Set.findMin &&& Set.findMax) $ Set.map fst s
+  (yl,yh) = (Set.findMin &&& Set.findMax) $ Set.map snd s

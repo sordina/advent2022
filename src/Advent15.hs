@@ -17,6 +17,7 @@ module Advent15 where
 
 import qualified Data.Set as Set
 import qualified Cuboids as Cuboid
+import Utils
 import Text.RawString.QQ (r)
 import Data.Char (isDigit)
 import Control.Monad (void)
@@ -32,7 +33,7 @@ import Text.ParserCombinators.ReadP
       readP_to_S,
       satisfy
     )
-import Debug.Trace (traceShowId)
+import Debug.Trace (traceShowId, traceShow)
 
 -- | Testing day15
 -- >>> (solve 10 . parseInput) testInput
@@ -69,42 +70,91 @@ solveB b
   . Set.map cubeCenter
   . Set.filter singleton
   . foldr1 combine
-  . map (traceShowId . cubeInvert (cubeBound b) . traceShowId . cubify)
+  . map (cubeInvert . cubify)
 
 combine :: Blocks -> Blocks -> Blocks
-combine a b = traceShowId $ Set.fromList $ mapMaybe (uncurry Cuboid.intersectCuboids) $ Set.toList $ Set.cartesianProduct a b
+combine a b = Set.fromList $ mapMaybe (uncurry Cuboid.intersectCuboids) $ Set.toList $ Set.cartesianProduct a b
+
+-- | Testing intersection
+-- >>> Cuboid.intersectCuboids (Cuboid.mkVec2 ((0,10),(0,10))) (Cuboid.mkVec2 ((5,15),(5,15)))
+-- Just V2 <(5,10),(5,10)>
+-- >>> Cuboid.intersectCuboids (Cuboid.mkVec2 ((0,10),(0,10))) (Cuboid.mkVec2 ((2,8),(5,15)))
+-- Just V2 <(2,8),(5,10)>
 
 -- | Testing roundtrip of unCubify . cubify
 -- prop> \p -> p == unBasis (basis p)
 -- 
 basis :: Point -> Point
-basis (x,y) = (x+y,y-x)
+basis (x,y) = (x-y,x+y)
 
 unBasis :: Point -> Point
 unBasis (i,j) = (x,y)
   where
-  x = i - (j + i) `div` 2
-  y = (j + i) `div` 2
+  y = (j-i) `div` 2
+  x = i + ((j-i) `div` 2)
+  {-
+  i = x-y
+  j = x+y
+  x = i+y
+  y = j-x
+  y = j-(i+y)
+  2y = j-i
+  y = (j-i)/2
+  x = i+(j-i)/2
+  -}
+
+-- | Testing cubify
+-- >>> cubify ((0,0),(10,0))
+-- V2 <(-10,10),(-10,10)>
+-- >>> cubeCenter (cubify ((0,0),(10,0)))
+-- (0,0)
+-- >>> cubify ((0,1),(0,0))
+-- V2 <(-2,0),(0,2)>
+-- >>> cubeCenter (cubify ((0,1),(0,0)))
+-- (0,1)
+-- >>> cubeCenter (cubify ((0,1),(0,0)))
+-- (0,1)
 
 cubify :: Beacon -> Block
 cubify (p1@(x,y),p2) = Cuboid.mkVec2 (is,js)
   where
   is      = (bi,ti)
   js      = (bj,tj)
-  (bi,bj) = basis (x,y-m)
-  (ti,tj) = basis (x,y+m)
+  (bi,bj) = basis (x-m,y)
+  (ti,tj) = basis (x+m,y)
   m       = manhattan p1 p2
 
-cubeInvert :: Block -> Block -> Blocks
-cubeInvert bs c = Set.delete c $ Set.fromList $ Cuboid.zipWithMVec outside bs c
-  where
-  outside (bl,bh) (cl,ch) = filter (uncurry (<=)) [(bl,pred cl), (cl,ch), (succ ch,bh)]
+-- | Centers shouldn't move after roundtripping through a cuboid
+-- prop> \c@(p,_) -> p == cubeCenter (cubify c)
 
-cubeBound :: Int -> Block
-cubeBound n = Cuboid.mkVec2 ((ax,cx),(ay,cy))
+-- >>> manhattan (0,0) (1,0)
+-- 1
+-- >>> cubify ((0,0),(1,0))
+-- V2 <(-1,1),(-1,1)>
+-- >>> cubeCenter (cubify ((0,0),(1,0)))
+-- (0,0)
+
+-- | Testing cubeInvert
+-- >>> cubeInvert (Cuboid.mkVec2 ((5,6),(5,6)))
+-- fromList [V2 <(-1000000000,4),(-1000000000,4)>,V2 <(-1000000000,4),(5,6)>,V2 <(-1000000000,4),(7,1000000000)>,V2 <(5,6),(-1000000000,4)>,V2 <(5,6),(7,1000000000)>,V2 <(7,1000000000),(-1000000000,4)>,V2 <(7,1000000000),(5,6)>,V2 <(7,1000000000),(7,1000000000)>]
+cubeInvert :: Block -> Blocks
+cubeInvert cube = Set.fromList $ drop 1 {- drops the leading sub cube -}  $ Cuboid.mapMVec regions cube
   where
-  (ax,ay) = basis (0,0)
-  (cx,cy) = basis (n,n)
+  regions (l,h) = [(l,h), (negate bigBound, pred l), (succ h, bigBound)]
+  bigBound = 1000000000 -- "INFINITY"
+
+-- | Testing cubeBound
+-- >>> cubeBound 0
+-- V2 <(0,0),(0,0)>
+-- >>> cubeBound 1
+-- V2 <(0,0),(0,2)>
+-- >>> cubeBound 10
+-- V2 <(0,0),(0,20)>
+cubeBound :: Int -> Block
+cubeBound n = Cuboid.mkVec2 ((ai,ci),(aj,cj))
+  where
+  (ai,aj) = basis (0,0)
+  (ci,cj) = basis (n,n)
 
 cuboidUnBasis :: Cuboid.Vec 2 Int -> Point
 cuboidUnBasis = unBasis . Cuboid.unVec2
@@ -119,7 +169,7 @@ frequency :: Point -> Int
 frequency (x,y) = x * 4000000 + y
 
 beacon :: Int -> Beacon -> Set.Set Point
-beacon n (p@(x,_),p') = Set.fromList [(x',y') | x' <- [x-m..x+m], y' <- [n], (x',y') /= p', y' == n, manhattan p (x',y') <= m]
+beacon n (p@(x,_),p') = Set.fromList [(x',y') | x' <- [x-m..x+m], y' <- [n], (x',y') /= p', manhattan p (x',y') <= m]
   where
   m = manhattan p p'
 
@@ -178,6 +228,14 @@ num = read <$> digits
   digit = satisfy isDigit
   digits = many1 digit
 
+-- | Checking testInput for partB
+-- "Sensor at x=2, y=18: closest beacon is at x=-2, y=15"
+-- >>> cubify ((2,18),(-2,15))
+-- V2 <(-23,-9),(13,27)>
+-- >>> cubeBound 20
+-- V2 <(0,0),(0,40)>
+-- >>> cubeInvert  (cubify ((2,18),(-2,15)))
+-- fromList [V2 <(-1000000000,-24),(-1000000000,12)>,V2 <(-1000000000,-24),(13,27)>,V2 <(-1000000000,-24),(28,1000000000)>,V2 <(-23,-9),(-1000000000,12)>,V2 <(-23,-9),(28,1000000000)>,V2 <(-8,1000000000),(-1000000000,12)>,V2 <(-8,1000000000),(13,27)>,V2 <(-8,1000000000),(28,1000000000)>]
 
 testInput :: String
 testInput = drop 1 [r|

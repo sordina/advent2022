@@ -17,3 +17,7 @@ let view = Text("hello")
 
 PlaygroundPage.current.setLiveView(view)
 
+UserDefaults.standard.set("asdf", forKey: "asdf")
+let foo = UserDefaults.standard.data(forKey: "asdf")
+foo
+
