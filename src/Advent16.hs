@@ -27,7 +27,8 @@ import Control.Applicative ((<|>))
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import qualified Data.MemoCombinators as Memo
-import Debug.Trace (traceShow)
+import qualified Control.Monad.State.Strict as State
+import Debug.Trace (traceShow, traceShowM)
 
 -- $setup
 -- >>> import Test.QuickCheck.All
@@ -52,33 +53,30 @@ day16b = error "TODOb"
 type Line = (String, (Int, [String]))
 type World = Map.Map String (Int, [String])
 type State = (String, Set.Set String)
+type Table = Map.Map (Int,State) Int
 
 -- * Solution
 -- The approach taken here is to initially write a naive recursive direct solution,
 -- then memoize. This can be done via the memocombinators library.
 
 solution :: World -> Int
-solution w = solve w 30 ("AA", Set.empty)
+solution w = State.evalState (solve w 30 ("AA", Set.empty)) Map.empty
 
-solve :: World -> Int -> State -> Int
-solve w = Memo.memo2 memoRemaining memoState solve'
-  where
-  solve' :: Int -> State -> Int
-  solve' 0 _ = 0
-  solve' t s = traceShow (t, s) $ flow w s + maximum (take 2 (map (solve w (pred t)) (step w s)))
+solve :: World -> Int -> State -> State.State Table Int
+solve _ 0 _ = pure 0
+solve w t s = do
+  g <- State.get
+  case Map.lookup (t,s) g of
+    Just answer -> do
+      -- traceShowM (answer, t, s)
+      pure answer
+    Nothing -> do
+      xs <- mapM (solve w (pred t)) (take 2 $ step w s)
+      let answer = flow w s + maximum xs
+      State.modify (Map.insert (t,s) answer)
+      pure answer
 
-memoRemaining :: Memo.Memo Int
-memoRemaining = Memo.unsafeArrayRange (0,30)
 
-memoState :: Memo.Memo State
-memoState = Memo.pair memoName memoSet
-
--- "XY" string
-memoName :: Memo.Memo String
-memoName = Memo.list Memo.char
-
-memoSet :: Memo.Memo (Set.Set String)
-memoSet = Memo.wrap Set.fromAscList Set.toAscList (Memo.list memoName)
 
 step :: World -> State -> [State]
 step t (n,o) = open moves
