@@ -26,9 +26,9 @@ import Data.Char (isSpace, isDigit)
 import Control.Applicative ((<|>))
 import qualified Data.Map as Map
 import qualified Data.Set as Set
-import qualified Data.MemoCombinators as Memo
 import qualified Control.Monad.State.Strict as State
-import Debug.Trace (traceShow, traceShowM)
+-- import Debug.Trace (traceShow, traceShowM)
+-- import Data.Maybe (fromMaybe)
 
 -- $setup
 -- >>> import Test.QuickCheck.All
@@ -68,22 +68,21 @@ solve w t s = do
   g <- State.get
   case Map.lookup (t,s) g of
     Just answer -> do
-      -- traceShowM (answer, t, s)
       pure answer
     Nothing -> do
-      xs <- mapM (solve w (pred t)) (take 2 $ step w s)
+      xs <- mapM (solve w (pred t)) (step w s)
       let answer = flow w s + maximum xs
       State.modify (Map.insert (t,s) answer)
       pure answer
 
-
-
 step :: World -> State -> [State]
 step t (n,o) = open moves
   where
+  c = maybe 0 fst (Map.lookup n t)
   moves = maybe [] (map move . snd) (Map.lookup n t)
   move s = (s,o)
   open
+    | c < 1          = id
     | Set.member n o = id
     | otherwise      = ((n, Set.insert n o): )
 
