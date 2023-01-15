@@ -34,6 +34,7 @@ import Text.ParserCombinators.ReadP
     )
 import Utils (IntX(..))
 import Control.Arrow ((***))
+
 -- | Testing day15
 -- >>> (solve 10 . parseInput) testInput
 -- 26
@@ -67,6 +68,7 @@ solveB b
   . fromMaybe (error "Couldn't find a solution")
   . find (bounds b)
   . Set.map cubeCenter
+  {- We filter for singletons to reduce the number of bounds checks -}
   . Set.filter singleton
   . foldr1 combine
   . map (cubeInvert . cubify)
