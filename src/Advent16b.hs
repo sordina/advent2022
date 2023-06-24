@@ -9,7 +9,6 @@ import Data.Maybe (fromMaybe, fromJust)
 import Data.Bits (Bits(..))
 import Data.Foldable (for_)
 import Control.Monad (unless)
-import Data.Bool (bool)
 
 import qualified Data.Map as Map
 import qualified Control.Monad.State as State
@@ -23,12 +22,12 @@ day16b2 = solve . parseInput
 -- If a mutually exclusive set of valves are toggled for you and the elephant then this is a candidate for an optimal solution.
 type Answer = Map.Map Int Int
 
+-- Infinite extension of numbers is introduced for tropical reasons
 data Infinite a = Finite a | Infinity
 
-instance Num a => Num (Infinite a) where
-  (Finite a) + (Finite b) = Finite (a+b)
-  _ + _ = Infinity
-  fromInteger x = Finite (fromInteger x)
+infinadd :: Num a => Infinite a -> Infinite a -> Infinite a
+infinadd (Finite a) (Finite b) = Finite (a + b)
+infinadd _ _ = Infinity
 
 instance Eq a => Eq (Infinite a) where
   Infinity == Infinity = True
@@ -59,7 +58,7 @@ floyd keys = State.execState do
     a <- State.gets (mkInfinite . Map.lookup (i,j))
     b <- State.gets (mkInfinite . Map.lookup (i,k))
     c <- State.gets (mkInfinite . Map.lookup (k,j))
-    Lens.at (i,j) Lens..= getInfinite (min a (b + c))
+    Lens.at (i,j) Lens..= getInfinite (min a (b `infinadd` c))
 
 -- Finds the maximum volume that can be produced in 26 steps with you and an elephant.
 solve :: [(String, (Int, [String]))] -> Int
@@ -67,7 +66,7 @@ solve puzzle =
   let
     directory = Map.fromList puzzle -- A convenient lookup from node to associated info
     graph = Map.map snd directory -- Adjacency information
-    flows = Map.filter (>0) $ Map.map fst directory -- Flow information
+    flows = [(k,v) | (k,(v,_)) <- puzzle, v > 0] -- All positive flows
     indicies = Map.fromList $ zipWith index [0..] puzzle -- Mapping from node id to bitmask representing the node
     keys = Map.keys graph -- Convenience list of all the node ids
     -- distances are initially set to 1 if adjacent, omitted if not
@@ -75,16 +74,19 @@ solve puzzle =
     -- The floyd algorithm is then used to set the distances to minimum traversal times
     distances' = floyd keys distances
 
+    -- Answer map is updated recursively via the pressure argument
     visit :: String -> Int -> Int -> Int -> State.State Answer ()
     visit valve minutes bitmask pressure = do
       a <- State.gets (fromMaybe 0 . Map.lookup bitmask)
       Lens.at bitmask Lens..= Just (max a pressure)
-      for_ (Map.toList flows) \(valve2, flow) -> do
+      -- Try moving to valves that have positive flow
+      for_ flows \(valve2, flow) -> do
         let
           d = fromJust $ Map.lookup (valve, valve2) distances'
-          remainingMinutes = minutes - d - 1
-          iv2 = fromJust $ Map.lookup valve2 indicies
-        unless ((iv2 .&. bitmask) /= 0 || remainingMinutes < 1) do
+          remainingMinutes = minutes - d - 1 -- Use floyd minutes map to deterime how much time will have passed
+          iv2 = fromJust $ Map.lookup valve2 indicies -- Find the bitmap for the new valve
+        -- Only recurse if there is time remaining and the candidate valve isn't already open
+        unless (remainingMinutes < 1 || (iv2 .&. bitmask) /= 0) do
           visit valve2 remainingMinutes (bitmask .|. iv2) (pressure + flow * remainingMinutes)
 
     visited2 = Map.empty Lens.&~ visit "AA" 26 0 0
