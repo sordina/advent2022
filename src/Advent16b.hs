@@ -22,6 +22,8 @@ day16b2 = solve . parseInput
 -- If a mutually exclusive set of valves are toggled for you and the elephant then this is a candidate for an optimal solution.
 type Answer = Map.Map Int Int
 
+-- Floyd-warshall algoritm for minimum distance between nodes in a graph
+-- This is used to create a distance matrix that can skip traversal steps when recursing to all potential subsequent nodes.
 floyd :: Ord a => [a] -> Map.Map (a,a) Int -> Map.Map (a,a) Int
 floyd keys = State.execState do
   for_ [(k,i,j) | k <- keys, i <- keys, j <- keys] \(k,i,j) -> do
@@ -35,15 +37,18 @@ floyd keys = State.execState do
         c' <- c
         pure $ min a' (b' + c')
 
+-- Finds the maximum volume that can be produced in 26 steps with you and an elephant.
 solve :: [(String, (Int, [String]))] -> Int
 solve puzzle =
   let
-    directory = Map.fromList puzzle
-    graph = Map.map snd directory
-    flows = Map.filter (>0) $ Map.map fst directory
-    indicies = Map.fromList $ zipWith index [0..] puzzle
-    keys = Map.keys graph
+    directory = Map.fromList puzzle -- A convenient lookup from node to associated info
+    graph = Map.map snd directory -- Adjacency information
+    flows = Map.filter (>0) $ Map.map fst directory -- Flow information
+    indicies = Map.fromList $ zipWith index [0..] puzzle -- Mapping from node id to bitmask representing the node
+    keys = Map.keys graph -- Convenience list of all the node ids
+    -- distances are initially set to 1 if adjacent, or 1000 if not
     distances = Map.fromList [ ((v,l), fromMaybe 1000 (bool Nothing (Just 1) . (l `elem`) =<< Map.lookup v graph)) | l <- keys, v <- keys ]
+    -- The floyd algorithm is then used to set the distances to minimum traversal times
     distances' = floyd keys distances
 
     visit :: String -> Int -> Int -> Int -> State.State Answer ()
