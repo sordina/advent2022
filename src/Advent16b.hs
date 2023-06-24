@@ -1,3 +1,4 @@
+{-# LANGUAGE InstanceSigs #-}
 module Advent16b where
 
 -- Translated from https://www.reddit.com/r/adventofcode/comments/zn6k1l/comment/j2xhog7/?utm_source=share&utm_medium=web2x&context=3
@@ -22,20 +23,43 @@ day16b2 = solve . parseInput
 -- If a mutually exclusive set of valves are toggled for you and the elephant then this is a candidate for an optimal solution.
 type Answer = Map.Map Int Int
 
+data Infinite a = Finite a | Infinity
+
+instance Num a => Num (Infinite a) where
+  (Finite a) + (Finite b) = Finite (a+b)
+  _ + _ = Infinity
+  fromInteger x = Finite (fromInteger x)
+
+instance Eq a => Eq (Infinite a) where
+  Infinity == Infinity = True
+  (Finite a) == (Finite b) = a == b
+  _ == _ = False
+
+instance Ord a => Ord (Infinite a) where
+  compare :: Ord a => Infinite a -> Infinite a -> Ordering
+  compare Infinity Infinity = EQ
+  compare (Finite _) Infinity = LT
+  compare Infinity (Finite _) = GT
+  compare (Finite a) (Finite b) = a `compare` b
+
+mkInfinite :: Num a => Maybe a -> Infinite a
+mkInfinite Nothing = Infinity
+mkInfinite (Just a) = Finite a
+
+getInfinite :: Num a => Infinite a -> Maybe a
+getInfinite Infinity = Nothing
+getInfinite (Finite a) = Just a
+
 -- Floyd-warshall algoritm for minimum distance between nodes in a graph
 -- This is used to create a distance matrix that can skip traversal steps when recursing to all potential subsequent nodes.
+-- "Infinite" extension of numbers is used to allow min to work without default values (initially omitting non-adjacent values from the state)
 floyd :: Ord a => [a] -> Map.Map (a,a) Int -> Map.Map (a,a) Int
 floyd keys = State.execState do
   for_ [(k,i,j) | k <- keys, i <- keys, j <- keys] \(k,i,j) -> do
-    a <- State.gets (Map.lookup (i,j))
-    b <- State.gets (Map.lookup (i,k))
-    c <- State.gets (Map.lookup (k,j))
-    Lens.at (i,j) Lens..=
-      do
-        a' <- a
-        b' <- b
-        c' <- c
-        pure $ min a' (b' + c')
+    a <- State.gets (mkInfinite . Map.lookup (i,j))
+    b <- State.gets (mkInfinite . Map.lookup (i,k))
+    c <- State.gets (mkInfinite . Map.lookup (k,j))
+    Lens.at (i,j) Lens..= getInfinite (min a (b + c))
 
 -- Finds the maximum volume that can be produced in 26 steps with you and an elephant.
 solve :: [(String, (Int, [String]))] -> Int
@@ -46,8 +70,8 @@ solve puzzle =
     flows = Map.filter (>0) $ Map.map fst directory -- Flow information
     indicies = Map.fromList $ zipWith index [0..] puzzle -- Mapping from node id to bitmask representing the node
     keys = Map.keys graph -- Convenience list of all the node ids
-    -- distances are initially set to 1 if adjacent, or 1000 if not
-    distances = Map.fromList [ ((v,l), fromMaybe 1000 (bool Nothing (Just 1) . (l `elem`) =<< Map.lookup v graph)) | l <- keys, v <- keys ]
+    -- distances are initially set to 1 if adjacent, omitted if not
+    distances =  Map.fromList [((f,t),1) | (f,(_, ts)) <- puzzle, t <- ts]
     -- The floyd algorithm is then used to set the distances to minimum traversal times
     distances' = floyd keys distances
 
