@@ -67,7 +67,7 @@ solve puzzle =
     directory = Map.fromList puzzle -- A convenient lookup from node to associated info
     graph = Map.map snd directory -- Adjacency information
     flows = [(k,v) | (k,(v,_)) <- puzzle, v > 0] -- All positive flows
-    indicies = Map.fromList $ zipWith index [0..] puzzle -- Mapping from node id to bitmask representing the node
+    indicies = Map.fromList $ zipWith index [0..] puzzle -- Mapping from node id to bitmap representing the node
     keys = Map.keys graph -- Convenience list of all the node ids
     -- distances are initially set to 1 if adjacent, omitted if not
     distances =  Map.fromList [((f,t),1) | (f,(_, ts)) <- puzzle, t <- ts]
@@ -76,9 +76,9 @@ solve puzzle =
 
     -- Answer map is updated recursively via the pressure argument
     visit :: String -> Int -> Int -> Int -> State.State Answer ()
-    visit valve minutes bitmask pressure = do
-      a <- State.gets (fromMaybe 0 . Map.lookup bitmask)
-      Lens.at bitmask Lens..= Just (max a pressure)
+    visit valve minutes bitmap pressure = do
+      a <- State.gets (fromMaybe 0 . Map.lookup bitmap)
+      Lens.at bitmap Lens..= Just (max a pressure)
       -- Try moving to valves that have positive flow
       for_ flows \(valve2, flow) -> do
         let
@@ -86,10 +86,10 @@ solve puzzle =
           remainingMinutes = minutes - d - 1 -- Use floyd minutes map to deterime how much time will have passed
           iv2 = fromJust $ Map.lookup valve2 indicies -- Find the bitmap for the new valve
         -- Only recurse if there is time remaining and the candidate valve isn't already open
-        unless (remainingMinutes < 1 || (iv2 .&. bitmask) /= 0) do
+        unless (remainingMinutes < 1 || (iv2 .&. bitmap) /= 0) do
           -- NOTE: The new pressure value is the most confusing part here?
           -- Clearly this is a poor name for the argument, but what is actually being represented?
-          visit valve2 remainingMinutes (bitmask .|. iv2) (pressure + flow * remainingMinutes)
+          visit valve2 remainingMinutes (bitmap .|. iv2) (pressure + flow * remainingMinutes)
 
     visited2 = Map.empty Lens.&~ visit "AA" 26 0 0
     part2 = maximum [v1 + v2 |
