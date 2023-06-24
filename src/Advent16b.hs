@@ -87,6 +87,8 @@ solve puzzle =
           iv2 = fromJust $ Map.lookup valve2 indicies -- Find the bitmap for the new valve
         -- Only recurse if there is time remaining and the candidate valve isn't already open
         unless (remainingMinutes < 1 || (iv2 .&. bitmask) /= 0) do
+          -- NOTE: The new pressure value is the most confusing part here?
+          -- Clearly this is a poor name for the argument, but what is actually being represented?
           visit valve2 remainingMinutes (bitmask .|. iv2) (pressure + flow * remainingMinutes)
 
     visited2 = Map.empty Lens.&~ visit "AA" 26 0 0
