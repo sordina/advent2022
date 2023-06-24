@@ -33,6 +33,9 @@ parseGrid' f s = Map.fromList cs
 crossProductZero :: (Num a, Num b, Enum a, Enum b) => (a, b) -> [(a, b)]
 crossProductZero (a,b) = liftM2 (,) [0..a] [0..b]
 
+crossProductList :: [a] -> [b] -> [(a,b)]
+crossProductList = liftM2 (,)
+
 traceWithId :: (a -> String) -> a -> a
 traceWithId f x = trace (f x) x
 
