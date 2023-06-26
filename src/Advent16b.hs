@@ -74,12 +74,14 @@ solve puzzle =
     -- The floyd algorithm is then used to set the distances to minimum traversal times
     distances' = floyd keys distances
 
-    -- Answer map is updated recursively via the pressure argument
+    -- Answer map is updated recursively via the volume argument
     visit :: String -> Int -> Int -> Int -> State.State Answer ()
-    visit valve minutes bitmap pressure = do
+    visit valve minutes bitmap volume = do
+      -- Set the memoized value for the current valve to the max of the volume calculated when visiting,
+      -- and its previously memoized value
       a <- State.gets (fromMaybe 0 . Map.lookup bitmap)
-      Lens.at bitmap Lens..= Just (max a pressure)
-      -- Try moving to valves that have positive flow
+      Lens.at bitmap Lens..= Just (max a volume)
+      -- Try moving to valves that have positive flow - Recursion bottoms out due to memoization `unless`.
       for_ flows \(valve2, flow) -> do
         let
           d = fromJust $ Map.lookup (valve, valve2) distances'
@@ -87,9 +89,11 @@ solve puzzle =
           iv2 = fromJust $ Map.lookup valve2 indicies -- Find the bitmap for the new valve
         -- Only recurse if there is time remaining and the candidate valve isn't already open
         unless (remainingMinutes < 1 || (iv2 .&. bitmap) /= 0) do
-          -- NOTE: The new pressure value is the most confusing part here?
-          -- Clearly this is a poor name for the argument, but what is actually being represented?
-          visit valve2 remainingMinutes (bitmap .|. iv2) (pressure + flow * remainingMinutes)
+          -- When visiting a subsequent node we know that
+          -- * The reason to visit it is to open its valve since transitive visits are not performed
+          -- * The additional volume generated will be its flow * remainingMinutes
+          -- * So the new volume passed in will be the prior volume plus the new valve accounting
+          visit valve2 remainingMinutes (bitmap .|. iv2) (volume + flow * remainingMinutes)
 
     visited2 = Map.empty Lens.&~ visit "AA" 26 0 0
     part2 = maximum [v1 + v2 |
