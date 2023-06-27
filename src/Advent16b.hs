@@ -60,6 +60,9 @@ floyd keys = State.execState do
     c <- State.gets (mkInfinite . Map.lookup (k,j))
     Lens.at (i,j) Lens..= getInfinite (min a (b `infinadd` c))
 
+index :: Int -> (String, a) -> (String, Int)
+index i (v, _) = (v, shiftL 1 i)
+
 -- Finds the maximum volume that can be produced in 26 steps with you and an elephant.
 solve :: [(String, (Int, [String]))] -> Int
 solve puzzle =
@@ -93,6 +96,7 @@ solve puzzle =
           -- * The reason to visit it is to open its valve since transitive visits are not performed
           -- * The additional volume generated will be its flow * remainingMinutes
           -- * So the new volume passed in will be the prior volume plus the new valve accounting
+          --   in an accumulator style recursion.
           visit valve2 remainingMinutes (bitmap .|. iv2) (volume + flow * remainingMinutes)
 
     visited2 = Map.empty Lens.&~ visit "AA" 26 0 0
@@ -103,6 +107,3 @@ solve puzzle =
       ]
 
   in part2
-
-index :: Int -> (String, a) -> (String, Int)
-index i (v, _) = (v, shiftL 1 i)

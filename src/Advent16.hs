@@ -24,14 +24,9 @@ import Text.ParserCombinators.ReadP
 import Control.Monad (void)
 import Data.Char (isSpace, isDigit)
 import Control.Applicative ((<|>))
-import Utils (crossProductList)
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import qualified Control.Monad.State.Strict as State
-import Data.Maybe (mapMaybe)
-import Debug.Trace (traceShowM)
--- import Debug.Trace (traceShow, traceShowM)
--- import Data.Maybe (fromMaybe)
 
 -- $setup
 -- >>> import Test.QuickCheck.All
@@ -41,12 +36,6 @@ import Debug.Trace (traceShowM)
 -- 1651
 day16 :: String -> Int
 day16 = solution . Map.fromList . parseInput
-
--- | Testing day16b
--- >>> day16b testInput
--- 1733
-day16b :: String -> Int
-day16b = solutionB . Map.fromList . parseInput
 
 -- * Types
 
@@ -90,61 +79,6 @@ step t (n,o) = open moves
 -- Flow determined by open gates times rates.
 flow :: World -> Set.Set String -> Int
 flow w o = sum $ map snd $ filter (\(n,_c) -> n `Set.member` o) $ Map.toList $ Map.map fst w
-
--- * Solution for Part B
-
-type StateB = ((String, String), Set.Set String) -- Current positions and open valves
-type TableB = Map.Map (Int, StateB) Int -- Map from time and configuration to ultimate volume
-
--- | Calculate the maximum volume that can flow as a result of possible moves in 26 minutes
--- Does this by recursively solving for all possible moves from the given positions,
--- while memoizing (via State) results to avoid recomputation of any given configuration.
-solutionB :: World -> Int
-solutionB w = State.evalState (solveB w 26 (("AA", "AA"), Set.empty)) Map.empty
-
--- | Stateful routine to solve from a given configuration
--- * Checks if configuration has already been solved, returning the solution if so
--- * Otherwise, solves for the maximum of all subsequent moves from the current configuration
---   and adds on the additional flow for the current minute.
-solveB :: World -> Int -> StateB -> State.State TableB Int
-solveB _ 0 _ = pure 0
-solveB w t s = do
-  g <- State.get
-  case Map.lookup (t,s) g of
-    Just answer -> do
-      -- traceShowM (answer, t, s)
-      pure answer
-    Nothing -> do
-      -- traceShowM ("MISS!", t, s)
-      xs <- mapM (solveB w (pred t)) (stepB w s)
-      let answer = flow w (snd s) + maximum xs
-      State.modify (Map.insert (t,s) answer)
-      pure answer
-
--- Enumerates state evolutions from current configuration
--- * Finds all the ways that You (n1) and your Elephant (n2) can move together or stay put
-stepB :: World -> StateB -> [StateB]
-stepB w ((n1,n2), o) = appendO <$> crossProductList moves1 moves2
-  where
-  moves1 = n1 `stay` maybe [] snd (Map.lookup n1 w)
-  moves2 = n2 `stay` maybe [] snd (Map.lookup n2 w)
-
-  -- If you're staying put, you must open a valve.
-  -- If you can't do that, then the option is invalid and must be discarded.
-  stay n l
-    | null l         = pure n -- Stay put if there are no other options otherwise x-product will be null
-    | c < 1          = l      -- Don't open valves that with no flow
-    | Set.member n o = l      -- Don't open already open valves
-    | otherwise      = n : l
-    where
-    c = maybe 0 fst (Map.lookup n w)
-
-  appendO :: (String, String) -> StateB
-  appendO (n1',n2') = (p, n1A <> n2A <> o)
-    where
-      p   = (min n1' n2', max n1' n2') -- Always order the positions since they are interchangable
-      n1A = if n1 == n1' then Set.singleton n1 else Set.empty -- If a position is unchanged that implies that the valve opens
-      n2A = if n2 == n2' then Set.singleton n2 else Set.empty
 
 -- * Parser
 

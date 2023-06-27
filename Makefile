@@ -10,7 +10,7 @@ build:
 	cabal build
 
 .PHONY: run
-run:
+run: data/Advent$(day)/input
 	@[ "$(day)" ] || ( echo "Usage: make run day=NN" && exit 1 )
 	cabal build
 	@echo
