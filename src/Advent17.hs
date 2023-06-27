@@ -4,7 +4,7 @@
 module Advent17 where
 
 import Text.RawString.QQ (r)
-import Control.Monad.State (execState, replicateM_, State, gets, modify)
+import Control.Monad.State (execState, replicateM_, State, gets)
 import Data.List.Split (splitOn)
 import Control.Lens ( Field1(_1), Field2(_2), view, (<<%=), (%=), Field3(_3) )
 import Control.Arrow (Arrow ((***), first, second))
@@ -23,7 +23,7 @@ day17 :: String -> Int
 day17 = day17N 2022
 
 day17N :: Int -> String -> Int
-day17N n (cleanInput -> s) = pred $ height $ traceWorld $ flip execState (mempty, cycle shapes, cycle s) $ replicateM_ n piece
+day17N n (cleanInput -> s) = pred $ height $ {- traceWorld $ -} flip execState (mempty, cycle shapes, cycle s) $ replicateM_ n piece
 
 cleanInput :: String -> String
 cleanInput = filter (`elem` "<>")
@@ -147,7 +147,8 @@ shapesString = drop 1 [r|
 
 -- | Testing day17 on Sample Input
 -- >>> day17N 2022 sampleInput
--- 3069
+-- WAS 3069
+-- NOW 3068
 
 sampleInput :: String
 sampleInput = drop 1 [r|
